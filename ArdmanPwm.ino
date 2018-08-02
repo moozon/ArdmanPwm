@@ -1,4 +1,6 @@
-#include <TimerOne.h>
+#include "TimerOne.h"
+#include "EEPROM.h"
+#include "MsTimer2.h"
 #define PWM_PIN 9
 
 uint32_t lastTime;
@@ -9,6 +11,10 @@ uint8_t incomingByte;
 String incomingString;
 String test;
 String debugString = "|";
+uint8_t dutyEeprom EEMEM = 50;
+uint32_t EEMEM freqEeprom = 1000;
+uint8_t dutyAddrEeprom = 0;
+uint8_t freqAddrEeprom = 3;
 //String debugString2 = "";
 //uint8_t debugInt = 123;
 bool goodRecive = true;
@@ -19,12 +25,40 @@ bool isLogging = true;
 void setup()
 {
 	Serial.begin(9600);
+	while (!Serial) {}
 	lastTime = millis();
 	//pinMode(9, OUTPUT);							// выход генератора
+	
+	//Чтение из EEPROM
+	//EEPROM.get(dutyAddrEeprom, duty);
+	//EEPROM.get(freqAddrEeprom, freq);
+	//if (duty > 100)
+		//duty = 50;
+	//if (freq > 1000000)
+		//freq = 100;
+	duty = eeprom_read_byte(&dutyEeprom);
+	freq = eeprom_read_dword(&freqEeprom);
+
+
 	Timer1.initialize(10000);
 	Timer1.pwm(PWM_PIN, dutyVal);
 	Timer1.start();
 	//debugString = debugString + "123";
+
+	//Init MsTimer2
+	MsTimer2::set(6000, flashEeprom); // 1 min period
+	MsTimer2::start();
+}
+
+//Запись в EEPROM по таймеру
+void flashEeprom() {
+	eeprom_update_byte(&dutyEeprom, duty);
+	eeprom_update_dword(&freqEeprom, freq);
+	//EEPROM.put(dutyAddrEeprom, duty);
+	//EEPROM.put(freqAddrEeprom, freq);
+	
+	//EEPROM.update(dutyAddrEeprom, duty);
+	//EEPROM.update(freqAddrEeprom, freq);
 }
 
 //Методы для изменения частоты и шим
